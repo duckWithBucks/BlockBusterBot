@@ -7,7 +7,6 @@ import json
 # --- Configuration ---
 
 # Configure Streamlit page settings
-# THEME: Background/Sidebar colors set in the external .streamlit/config.toml file.
 st.set_page_config(
     page_title="The Blockbuster Bot",
     layout="wide",
@@ -16,15 +15,13 @@ st.set_page_config(
 
 # Configure Gemini API
 try:
-    # Attempt to load API key from Streamlit secrets
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 except KeyError:
-    # Fallback for local testing if secrets are not configured
     st.error("Please set your GOOGLE_API_KEY in Streamlit secrets or as an environment variable.")
     st.stop()
     
-genai.configure(api_key=GOOGLE_API_KEY) 
-model = genai.GenerativeModel('gemini-2.5-flash')
+# Initialize the client object (preferred for chat management)
+client = genai.Client(api_key=GOOGLE_API_KEY)
 
 # --- Data & Prompts ---
 
@@ -58,50 +55,32 @@ If you are unable to give a proper recommendation because of insufficient data o
 # --- Functions ---
 
 def initialize_session_state():
-    """Initializes chat history and default mood."""
+    """Initializes chat history and the persistent chat object."""
+    global client, persona_instructions # Need access to client and instructions
+    
     if "messages" not in st.session_state:
-        # Initial greeting from the Blockbuster Bot
         st.session_state.messages = [
             {"role": "assistant", "content": "Welcome! I'm The Blockbuster Bot, your world-reknown film and TV critic. Tell me, what mood are you in, or what have you watched lately? Let's get you a reel good recommendation! 😉"}
         ]
     if "mood" not in st.session_state:
         st.session_state.mood = "Okay" # Default mood
-
-def get_gemini_response(prompt, persona_instructions):
-    """Generates a response from the Gemini model using chat history and system instructions."""
-    
-    # Pass persona instructions as system instruction
-    config = types.GenerateContentConfig( 
-        system_instruction=persona_instructions
-    )
-    
-    # CONSTRUCT CHAT HISTORY AND CONVERT TO types.Content OBJECTS
-    chat_history_content = []
-    
-    # Iterate through session messages and convert to types.Content
-    for m in st.session_state.messages:
-        # Check if content is a string before attempting conversion
-        if isinstance(m["content"], str):
-             chat_history_content.append(
-                types.Content(
-                    role=m["role"],
-                    parts=[types.Part.from_text(m["content"])]
-                )
+        
+    if "chat" not in st.session_state:
+        # Initialize the chat object with the model and system instructions
+        try:
+            st.session_state.chat = client.chats.create(
+                model='gemini-2.5-flash',
+                config=types.GenerateContentConfig(system_instruction=persona_instructions)
             )
+        except Exception as e:
+            st.error(f"Error initializing Gemini chat session: {e}")
+            st.stop()
 
-    # Append the current user prompt as a types.Content object
-    chat_history_content.append(
-        types.Content(
-            role="user", 
-            parts=[types.Part.from_text(prompt)]
-        )
-    )
-    
-    # Generate content using the correctly formatted history
-    response = model.generate_content(
-        chat_history_content, # <-- This is the fixed part
-        config=config
-    )
+
+def get_gemini_response(prompt):
+    """Generates a response from the Gemini model using the persistent chat object."""
+    # The chat object automatically manages history and configuration
+    response = st.session_state.chat.send_message(prompt)
     return response.text
 
 def display_recommendations(text):
@@ -157,6 +136,7 @@ def display_recommendations(text):
 def main():
     st.title("The Blockbuster Bot")
 
+    # Initialization now creates the chat object
     initialize_session_state()
 
     # ---------------- Sidebar (Recent Blockbusters & Mood) ----------------
@@ -206,8 +186,8 @@ def main():
 
         # 3. Generate bot response
         with st.spinner('Thinking up some critically-acclaimed genius...'):
-            # Send the augmented prompt to the model
-            response = get_gemini_response(full_prompt, persona_instructions)
+            # NEW CALL: Pass only the augmented prompt
+            response = get_gemini_response(full_prompt)
 
         # 4. Show assistant’s message
         with st.chat_message("assistant", avatar=robot_img):
