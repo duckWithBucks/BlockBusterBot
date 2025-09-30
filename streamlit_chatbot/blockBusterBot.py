@@ -20,8 +20,12 @@ except KeyError:
     st.error("Please set your GOOGLE_API_KEY in Streamlit secrets or as an environment variable.")
     st.stop()
     
-# Initialize the client object (preferred for chat management)
-client = genai.Client(api_key=GOOGLE_API_KEY)
+# Initialize the API configuration
+genai.configure(api_key=GOOGLE_API_KEY) 
+
+# Initialize the GenerativeModel object
+# This model object will be used to create the chat session
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 # --- Data & Prompts ---
 
@@ -56,7 +60,7 @@ If you are unable to give a proper recommendation because of insufficient data o
 
 def initialize_session_state():
     """Initializes chat history and the persistent chat object."""
-    global client, persona_instructions # Need access to client and instructions
+    global model, persona_instructions # Need access to model and instructions
     
     if "messages" not in st.session_state:
         st.session_state.messages = [
@@ -66,10 +70,9 @@ def initialize_session_state():
         st.session_state.mood = "Okay" # Default mood
         
     if "chat" not in st.session_state:
-        # Initialize the chat object with the model and system instructions
+        # Initialize the chat object using the model's start_chat method
         try:
-            st.session_state.chat = client.chats.create(
-                model='gemini-2.5-flash',
+            st.session_state.chat = model.start_chat(
                 config=types.GenerateContentConfig(system_instruction=persona_instructions)
             )
         except Exception as e:
@@ -186,7 +189,7 @@ def main():
 
         # 3. Generate bot response
         with st.spinner('Thinking up some critically-acclaimed genius...'):
-            # NEW CALL: Pass only the augmented prompt
+            # Pass only the augmented prompt to the chat session
             response = get_gemini_response(full_prompt)
 
         # 4. Show assistant’s message
