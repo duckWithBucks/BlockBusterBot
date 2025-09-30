@@ -2,7 +2,7 @@
 [theme]
 # Ensures text contrast on dark backgrounds
 base = "dark" 
-primaryColor = "#F63366" # A common Streamlit accent color
+primaryColor = "#ff9900" # A common Streamlit accent color
 
 # Background settings
 backgroundColor = "#333333" # Dark Grey for the main content area
