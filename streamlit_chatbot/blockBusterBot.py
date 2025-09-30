@@ -37,7 +37,7 @@ def main():
 
     # ---------------- Chat History ----------------
     user_emoji = "👤"
-    robot_img = "robot.png"  # add this image file to your project folder
+    robot_img = "🤖"  # add this image file to your project folder
 
     for message in st.session_state.messages:
         if message["role"] == "assistant":
