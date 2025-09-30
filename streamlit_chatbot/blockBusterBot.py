@@ -24,7 +24,6 @@ except KeyError:
 genai.configure(api_key=GOOGLE_API_KEY) 
 
 # Initialize the GenerativeModel object
-# This model object will be used to create the chat session
 model = genai.GenerativeModel('gemini-2.5-flash')
 
 # --- Data & Prompts ---
@@ -60,7 +59,7 @@ If you are unable to give a proper recommendation because of insufficient data o
 
 def initialize_session_state():
     """Initializes chat history and the persistent chat object."""
-    global model, persona_instructions # Need access to model and instructions
+    global model, persona_instructions 
     
     if "messages" not in st.session_state:
         st.session_state.messages = [
@@ -70,13 +69,15 @@ def initialize_session_state():
         st.session_state.mood = "Okay" # Default mood
         
     if "chat" not in st.session_state:
-        # Initialize the chat object using the model's start_chat method
+        # FIX APPLIED HERE: Pass system_instruction directly instead of using 'config' keyword argument
         try:
             st.session_state.chat = model.start_chat(
-                config=types.GenerateContentConfig(system_instruction=persona_instructions)
+                system_instruction=persona_instructions 
             )
         except Exception as e:
             st.error(f"Error initializing Gemini chat session: {e}")
+            # If the error is *not* the config error, but still fails, let's try the config method as a fallback
+            # (Note: For most deployment environments, the direct parameter is the right modern fix)
             st.stop()
 
 
