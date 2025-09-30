@@ -1,5 +1,3 @@
-google.generativeai
-generativeai
-types
+streamlit
 pandas
-json
+google-genai
