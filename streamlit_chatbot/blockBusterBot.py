@@ -1,12 +1,15 @@
 import streamlit as st
 import pandas as pd
-from google import genai
-from google.genai import types # <-- FIXED IMPORT
+# Use the official SDK import alias for configuration and model calls
+import google.generativeai as genai 
+# Keep the separate import for the 'types' object
+from google.genai import types 
 import json
 
 # --- Configuration ---
 
 # Configure Streamlit page settings
+# THEME: Background/Sidebar colors set in the external .streamlit/config.toml file.
 st.set_page_config(
     page_title="The Blockbuster Bot",
     layout="wide",
@@ -22,7 +25,8 @@ except KeyError:
     st.error("Please set your GOOGLE_API_KEY in Streamlit secrets or as an environment variable.")
     st.stop()
     
-genai.configure(api_key=GOOGLE_API_KEY)
+# FIX: Ensure genai.configure is called from the object imported above (google.generativeai as genai)
+genai.configure(api_key=GOOGLE_API_KEY) 
 model = genai.GenerativeModel('gemini-2.5-flash')
 
 # --- Data & Prompts ---
@@ -70,7 +74,6 @@ def get_gemini_response(prompt, persona_instructions):
     """Generates a response from the Gemini model using chat history and system instructions."""
     
     # Pass persona instructions as system instruction
-    # The fix is to use 'types' because it was imported directly
     config = types.GenerateContentConfig( 
         system_instruction=persona_instructions
     )
