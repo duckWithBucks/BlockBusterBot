@@ -6,6 +6,6 @@ primaryColor = "#F63366" # A common Streamlit accent color
 
 # Background settings
 backgroundColor = "#333333" # Dark Grey for the main content area
-secondaryBackgroundColor = "#FF0000" # Bright Red for the sidebar
+secondaryBackgroundColor = "#b30000" # Bright Red for the sidebar
 textColor = "#FAFAFA"
 font = "sans serif"

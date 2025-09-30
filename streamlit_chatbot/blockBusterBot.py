@@ -118,7 +118,7 @@ def display_recommendations(text):
                 # Display the poster image (must be a public URL)
                 st.image(rec.get("poster_url", "[https://via.placeholder.com/200x300?text=Poster+Missing](https://via.placeholder.com/200x300?text=Poster+Missing)"), 
                          caption=f"IMDb: {rec.get('imdb_rating', 'N/A')}", 
-                         use_column_width="auto")
+                         use_container_width="auto")
             
             with col2:
                 st.markdown(f"## {rec.get('title', 'Unknown Title')}")
@@ -149,7 +149,7 @@ def main():
         for movie in recent_blockbusters:
             st.markdown("---")
             st.subheader(movie["Title"])
-            st.image(movie["PosterURL"], caption=f"IMDb: {movie['IMDb']}/10", use_column_width=True)
+            st.image(movie["PosterURL"], caption=f"IMDb: {movie['IMDb']}/10", use_container_width=True)
         
         st.markdown("---")
         # Keep the mood slider to provide context to the bot
