@@ -1,0 +1,11 @@
+# .streamlit/config.toml
+[theme]
+# Ensures text contrast on dark backgrounds
+base = "dark" 
+primaryColor = "#F63366" # A common Streamlit accent color
+
+# Background settings
+backgroundColor = "#333333" # Dark Grey for the main content area
+secondaryBackgroundColor = "#FF0000" # Bright Red for the sidebar
+textColor = "#FAFAFA"
+font = "sans serif"
