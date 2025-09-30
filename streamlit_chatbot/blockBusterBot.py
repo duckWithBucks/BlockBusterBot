@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import google.generativeai as genai 
-from google.genai import types 
+from google.genai import types # Keep this import, it's used elsewhere
 import json
 
 # --- Configuration ---
@@ -69,12 +69,15 @@ def initialize_session_state():
         st.session_state.mood = "Okay" # Default mood
         
     if "chat" not in st.session_state:
-        # FIX APPLIED HERE: Revert back to passing the system instruction inside the 'config' object
+        # FIX APPLIED HERE: Initialize chat with system instructions added to the first message, 
+        # or use the empty list and put the instruction directly into the first user prompt.
+        
+        # Since the error states 'config' is unexpected, we use the simplest form:
         try:
-            chat_config = types.GenerateContentConfig(system_instruction=persona_instructions)
-            st.session_state.chat = model.start_chat(
-                config=chat_config # Pass the config object explicitly
-            )
+            # Note: This version of start_chat() expects history first. 
+            # We initialize it with an empty list and ensure the persona_instructions are 
+            # included in the user's first prompt (which they already are in main()).
+            st.session_state.chat = model.start_chat(history=[])
         except Exception as e:
             st.error(f"Error initializing Gemini chat session: {e}")
             st.stop()
@@ -140,6 +143,8 @@ def main():
     st.title("The Blockbuster Bot")
 
     # Initialization now creates the chat object
+    # NOTE: Since system instructions can't be passed at init, 
+    # we rely on the very first prompt to contain the persona_instructions.
     initialize_session_state()
 
     # ---------------- Sidebar (Recent Blockbusters & Mood) ----------------
@@ -177,10 +182,17 @@ def main():
     # Use the current mood to suggest a starting prompt
     input_placeholder = f"I'm feeling {st.session_state.mood}. Recommend a crime thriller!"
     if prompt := st.chat_input(input_placeholder):
-        # Augment the prompt with context from the sidebar mood
+        
+        # ***CRITICAL FIX HERE***: Prepend the persona instructions to the *first* prompt
+        # if the chat is new. This acts as the System Instruction substitute.
+        
         full_prompt = f"My current mood is '{st.session_state.mood}'. User request: {prompt}"
+        
+        # Only prepend persona instructions if this is the first real user message
+        if len(st.session_state.messages) == 1 and st.session_state.messages[0]["role"] == "assistant":
+             full_prompt = persona_instructions + "\n\n---START OF USER REQUEST---\n\n" + full_prompt
 
-        # 1. Show user’s message
+        # 1. Show user’s message (using the original prompt text for clarity)
         with st.chat_message("user", avatar=user_emoji):
             st.write(prompt)
 
@@ -189,7 +201,7 @@ def main():
 
         # 3. Generate bot response
         with st.spinner('Thinking up some critically-acclaimed genius...'):
-            # Pass only the augmented prompt to the chat session
+            # Pass the augmented (or regular) prompt to the chat session
             response = get_gemini_response(full_prompt)
 
         # 4. Show assistant’s message
