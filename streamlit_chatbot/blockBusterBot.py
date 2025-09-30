@@ -69,15 +69,14 @@ def initialize_session_state():
         st.session_state.mood = "Okay" # Default mood
         
     if "chat" not in st.session_state:
-        # FIX APPLIED HERE: Pass system_instruction directly instead of using 'config' keyword argument
+        # FIX APPLIED HERE: Revert back to passing the system instruction inside the 'config' object
         try:
+            chat_config = types.GenerateContentConfig(system_instruction=persona_instructions)
             st.session_state.chat = model.start_chat(
-                system_instruction=persona_instructions 
+                config=chat_config # Pass the config object explicitly
             )
         except Exception as e:
             st.error(f"Error initializing Gemini chat session: {e}")
-            # If the error is *not* the config error, but still fails, let's try the config method as a fallback
-            # (Note: For most deployment environments, the direct parameter is the right modern fix)
             st.stop()
 
 
