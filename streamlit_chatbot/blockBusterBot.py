@@ -1,12 +1,12 @@
 import streamlit as st
 import pandas as pd
-import google.generativeai as genai
+from google import genai
+from google.genai import types # <-- FIXED IMPORT
 import json
 
 # --- Configuration ---
 
 # Configure Streamlit page settings
-# THEME: The background and sidebar colors are set in the .streamlit/config.toml file.
 st.set_page_config(
     page_title="The Blockbuster Bot",
     layout="wide",
@@ -70,7 +70,8 @@ def get_gemini_response(prompt, persona_instructions):
     """Generates a response from the Gemini model using chat history and system instructions."""
     
     # Pass persona instructions as system instruction
-    config = genai.types.GenerateContentConfig(
+    # The fix is to use 'types' because it was imported directly
+    config = types.GenerateContentConfig( 
         system_instruction=persona_instructions
     )
     
@@ -118,7 +119,7 @@ def display_recommendations(text):
                 # Display the poster image (must be a public URL)
                 st.image(rec.get("poster_url", "[https://via.placeholder.com/200x300?text=Poster+Missing](https://via.placeholder.com/200x300?text=Poster+Missing)"), 
                          caption=f"IMDb: {rec.get('imdb_rating', 'N/A')}", 
-                         use_container_width="auto")
+                         use_column_width="auto")
             
             with col2:
                 st.markdown(f"## {rec.get('title', 'Unknown Title')}")
@@ -149,7 +150,7 @@ def main():
         for movie in recent_blockbusters:
             st.markdown("---")
             st.subheader(movie["Title"])
-            st.image(movie["PosterURL"], caption=f"IMDb: {movie['IMDb']}/10", use_container_width=True)
+            st.image(movie["PosterURL"], caption=f"IMDb: {movie['IMDb']}/10", use_column_width=True)
         
         st.markdown("---")
         # Keep the mood slider to provide context to the bot
