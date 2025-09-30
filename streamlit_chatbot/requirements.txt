@@ -1,3 +1,5 @@
 google.generativeai
+generativeai
+types
 pandas
 json
