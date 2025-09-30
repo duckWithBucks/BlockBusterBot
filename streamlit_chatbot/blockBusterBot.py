@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
-# Use the official SDK import alias for configuration and model calls
 import google.generativeai as genai 
-# Keep the separate import for the 'types' object
 from google.genai import types 
 import json
 
@@ -25,7 +23,6 @@ except KeyError:
     st.error("Please set your GOOGLE_API_KEY in Streamlit secrets or as an environment variable.")
     st.stop()
     
-# FIX: Ensure genai.configure is called from the object imported above (google.generativeai as genai)
 genai.configure(api_key=GOOGLE_API_KEY) 
 model = genai.GenerativeModel('gemini-2.5-flash')
 
@@ -78,14 +75,31 @@ def get_gemini_response(prompt, persona_instructions):
         system_instruction=persona_instructions
     )
     
-    # Construct chat history for multi-turn conversation
-    chat_history = [{"role": m["role"], "parts": [m["content"]]} for m in st.session_state.messages]
+    # CONSTRUCT CHAT HISTORY AND CONVERT TO types.Content OBJECTS
+    chat_history_content = []
     
-    # Append the current user prompt
-    chat_history.append({"role": "user", "parts": [prompt]})
+    # Iterate through session messages and convert to types.Content
+    for m in st.session_state.messages:
+        # Check if content is a string before attempting conversion
+        if isinstance(m["content"], str):
+             chat_history_content.append(
+                types.Content(
+                    role=m["role"],
+                    parts=[types.Part.from_text(m["content"])]
+                )
+            )
+
+    # Append the current user prompt as a types.Content object
+    chat_history_content.append(
+        types.Content(
+            role="user", 
+            parts=[types.Part.from_text(prompt)]
+        )
+    )
     
+    # Generate content using the correctly formatted history
     response = model.generate_content(
-        chat_history,
+        chat_history_content, # <-- This is the fixed part
         config=config
     )
     return response.text
@@ -122,7 +136,7 @@ def display_recommendations(text):
                 # Display the poster image (must be a public URL)
                 st.image(rec.get("poster_url", "[https://via.placeholder.com/200x300?text=Poster+Missing](https://via.placeholder.com/200x300?text=Poster+Missing)"), 
                          caption=f"IMDb: {rec.get('imdb_rating', 'N/A')}", 
-                         use_container_width="auto")
+                         use_column_width="auto")
             
             with col2:
                 st.markdown(f"## {rec.get('title', 'Unknown Title')}")
@@ -153,7 +167,7 @@ def main():
         for movie in recent_blockbusters:
             st.markdown("---")
             st.subheader(movie["Title"])
-            st.image(movie["PosterURL"], caption=f"IMDb: {movie['IMDb']}/10", use_container_width=True)
+            st.image(movie["PosterURL"], caption=f"IMDb: {movie['IMDb']}/10", use_column_width=True)
         
         st.markdown("---")
         # Keep the mood slider to provide context to the bot
